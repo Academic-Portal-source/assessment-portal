@@ -1,0 +1,433 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  signInWithCustomToken,
+  onAuthStateChanged 
+} from 'firebase/auth';
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  collection, 
+  onSnapshot, 
+  deleteDoc,
+  updateDoc, 
+  addDoc 
+} from 'firebase/firestore';
+
+// --- Firebase Configuration & Initialization ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'edu-assessment-portal';
+
+const ADMIN_PASSWORD = "admin123"; 
+const ADMISSION_REGEX = /^STU-\d{3}$/;
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [view, setView] = useState('login'); 
+  const [admissionNo, setAdmissionNo] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  
+  const [questions, setQuestions] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [externalModules, setExternalModules] = useState([]);
+  const [activeModule, setActiveModule] = useState(null);
+  const [currentStudentData, setCurrentStudentData] = useState(null);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) { console.error("Auth error:", err); }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Sync Questions
+    const unsubQ = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'questions'), (snap) => {
+      setQuestions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    // Sync External HTML Modules
+    const unsubM = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'modules'), (snap) => {
+      setExternalModules(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    // Sync Submissions
+    const unsubS = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), (snap) => {
+      setSubmissions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => { unsubQ(); unsubM(); unsubS(); };
+  }, [user]);
+
+  const handleStudentLogin = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    if (!ADMISSION_REGEX.test(admissionNo)) {
+      setError("Format: STU-XXX");
+      return;
+    }
+    const studentId = admissionNo.toUpperCase();
+    const studentDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', studentId);
+    
+    try {
+      const snap = await getDoc(studentDocRef);
+      let data = { admissionNo: studentId, status: 'active', lastLogin: Date.now() };
+      if (snap.exists()) data = snap.data();
+      else await setDoc(studentDocRef, data);
+
+      setCurrentStudentData(data);
+      setView('student-dashboard');
+      setError('');
+    } catch (err) { setError("Login failed."); }
+  };
+
+  const exportToCSV = () => {
+    if (submissions.length === 0) return;
+    const headers = ["Admission No", "Score", "Module", "Time(s)", "Timestamp"];
+    const rows = submissions.map(s => [s.admissionNo, s.score, s.moduleName || 'Standard', s.timeSpent, new Date(s.completedAt).toLocaleString()]);
+    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", `results_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center font-bold">Initializing Portal...</div>;
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      <nav className="bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-50">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('login')}>
+          <div className="bg-indigo-600 p-2 rounded-lg text-white font-bold">EP</div>
+          <span className="text-xl font-bold tracking-tight">EduPortal</span>
+        </div>
+        {view !== 'login' && (
+          <button onClick={() => { setView('login'); setActiveModule(null); setAdmissionNo(''); }} className="text-sm font-semibold text-slate-400 hover:text-red-500">Exit Session</button>
+        )}
+      </nav>
+
+      <main className="max-w-6xl mx-auto p-4 md:p-6">
+        {view === 'login' && (
+          <div className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl border mt-16">
+            <h2 className="text-2xl font-bold mb-6 text-center">Student Login</h2>
+            <form onSubmit={handleStudentLogin} className="space-y-4">
+              <input 
+                type="text" placeholder="Admission Number (STU-123)"
+                className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-indigo-500 uppercase font-medium"
+                value={admissionNo} onChange={(e) => setAdmissionNo(e.target.value)} required
+              />
+              {error && <p className="text-red-500 text-xs font-bold">{error}</p>}
+              <button className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg transition-transform active:scale-95">Enter Portal</button>
+            </form>
+            <button onClick={() => setView('admin-login')} className="mt-8 w-full text-xs text-slate-300 hover:text-slate-500">Teacher Login</button>
+          </div>
+        )}
+
+        {view === 'admin-login' && (
+          <div className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl border mt-16">
+            <h2 className="text-2xl font-bold mb-6 text-center">Admin Access</h2>
+            <input 
+              type="password" placeholder="Password"
+              className="w-full px-4 py-3 rounded-xl border mb-4 text-center"
+              onKeyDown={(e) => e.key === 'Enter' && e.target.value === ADMIN_PASSWORD && setView('admin-dashboard')}
+            />
+            <button onClick={() => setView('login')} className="w-full text-slate-400 text-sm">Cancel</button>
+          </div>
+        )}
+
+        {view === 'student-dashboard' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white p-8 rounded-3xl shadow-sm border mb-8 flex justify-between items-center flex-wrap gap-4">
+              <div>
+                <h1 className="text-3xl font-bold">Hello, {currentStudentData?.admissionNo}!</h1>
+                <p className="text-slate-500">Choose an assessment module to begin.</p>
+              </div>
+              <div className="bg-indigo-50 px-4 py-2 rounded-full text-indigo-600 font-bold text-sm border border-indigo-100">
+                {questions.length + externalModules.length} Modules Available
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Internal Quiz Option */}
+              <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 hover:border-indigo-500 transition-all cursor-pointer group" onClick={() => setView('quiz')}>
+                <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4 text-indigo-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                </div>
+                <h3 className="text-xl font-bold mb-2">Standard Assessment</h3>
+                <p className="text-slate-400 text-sm mb-4">The core quiz containing {questions.length} questions built by your teacher.</p>
+                <span className="text-indigo-600 font-bold group-hover:translate-x-2 inline-block transition-transform">Start Now →</span>
+              </div>
+
+              {/* External Modules */}
+              {externalModules.map(mod => (
+                <div key={mod.id} className="bg-white p-6 rounded-3xl border-2 border-slate-100 hover:border-emerald-500 transition-all cursor-pointer group" onClick={() => { setActiveModule(mod); setView('external-view'); }}>
+                  <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4 text-emerald-600">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">{mod.name}</h3>
+                  <p className="text-slate-400 text-sm mb-4">Interactive HTML module uploaded on {new Date(mod.addedAt).toLocaleDateString()}.</p>
+                  <span className="text-emerald-600 font-bold group-hover:translate-x-2 inline-block transition-transform">Launch Module →</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {view === 'quiz' && <QuizEngine questions={questions} admissionNo={currentStudentData?.admissionNo} onComplete={() => setView('thanks')} user={user} />}
+        
+        {view === 'external-view' && activeModule && (
+          <div className="h-[80vh] w-full bg-white rounded-3xl shadow-2xl border overflow-hidden flex flex-col">
+            <div className="bg-slate-900 text-white p-3 flex justify-between items-center px-6">
+              <span className="font-bold text-sm">Active Module: {activeModule.name}</span>
+              <button onClick={() => setView('student-dashboard')} className="text-xs bg-red-500 px-3 py-1 rounded-full">Close Module</button>
+            </div>
+            <iframe 
+              srcDoc={activeModule.html} 
+              className="flex-1 w-full border-none" 
+              title="External Module"
+              sandbox="allow-scripts allow-forms allow-modals"
+            />
+          </div>
+        )}
+
+        {view === 'thanks' && (
+          <div className="text-center py-20 bg-white rounded-3xl border shadow-sm">
+            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">Submission Received</h2>
+            <p className="text-slate-500 mb-8">Well done! Your instructor will review your performance shortly.</p>
+            <button onClick={() => { setView('login'); setAdmissionNo(''); }} className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold">Finish Session</button>
+          </div>
+        )}
+
+        {view === 'admin-dashboard' && <AdminDashboard submissions={submissions} questions={questions} modules={externalModules} exportCSV={exportToCSV} user={user} />}
+      </main>
+    </div>
+  );
+}
+
+function QuizEngine({ questions, admissionNo, onComplete, user }) {
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const startTime = useRef(Date.now());
+
+  if (questions.length === 0) return <div className="text-center p-20 bg-white rounded-3xl border">No internal questions. Try an external module.</div>;
+
+  const q = questions[index];
+  const progress = ((index + 1) / questions.length) * 100;
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    let score = 0;
+    questions.forEach((item, i) => {
+      const u = (answers[i] || '').toString().toLowerCase().trim();
+      const c = (item.correct || '').toString().toLowerCase().trim();
+      if (u === c) score++;
+    });
+
+    const data = {
+      admissionNo,
+      score: `${score}/${questions.length}`,
+      moduleName: 'Standard Quiz',
+      timeSpent: Math.round((Date.now() - startTime.current) / 1000),
+      completedAt: Date.now()
+    };
+
+    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), data);
+    onComplete();
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="w-full bg-slate-200 h-2 rounded-full mb-8 overflow-hidden"><div className="bg-indigo-600 h-full transition-all" style={{ width: `${progress}%` }} /></div>
+      <div className="bg-white p-10 rounded-3xl shadow-xl border">
+        <h2 className="text-2xl font-bold mb-8">{q.text}</h2>
+        <div className="space-y-3">
+          {q.type === 'mcq' ? (q.options || []).map((opt, i) => (
+            <button key={i} onClick={() => setAnswers({...answers, [index]: opt})} className={`w-full p-4 text-left rounded-xl border-2 transition-all ${answers[index] === opt ? 'border-indigo-600 bg-indigo-50 font-bold' : 'border-slate-100 hover:border-slate-300'}`}>{opt}</button>
+          )) : (
+            <input className="w-full p-4 border-2 rounded-xl w-full" value={answers[index] || ''} onChange={e => setAnswers({...answers, [index]: e.target.value})} placeholder="Type answer..." />
+          )}
+        </div>
+        <div className="flex justify-between mt-12">
+          <button disabled={index === 0} onClick={() => setIndex(index-1)} className="text-slate-400 font-bold disabled:opacity-0">Back</button>
+          {index === questions.length - 1 ? (
+            <button onClick={handleSubmit} disabled={isSubmitting} className="bg-indigo-600 text-white px-10 py-3 rounded-xl font-bold shadow-lg">{isSubmitting ? 'Saving...' : 'Finish'}</button>
+          ) : (
+            <button onClick={() => setIndex(index+1)} className="bg-slate-800 text-white px-10 py-3 rounded-xl font-bold">Next</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminDashboard({ submissions, questions, modules, exportCSV, user }) {
+  const [tab, setTab] = useState('results');
+  const [editingId, setEditingId] = useState(null);
+  const [newQ, setNewQ] = useState({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '' });
+  const csvRef = useRef(null);
+  const htmlModuleRef = useRef(null);
+
+  const deleteDocItem = async (col, id) => {
+    if (confirm(`Remove this item?`)) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', col, id));
+  };
+
+  const saveQ = async () => {
+    if (!newQ.text || !newQ.correct) return;
+    const qCol = collection(db, 'artifacts', appId, 'public', 'data', 'questions');
+    const data = { ...newQ, options: newQ.options.filter(o => o?.trim() !== '') };
+    if (editingId) {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', editingId), data);
+      setEditingId(null);
+    } else {
+      await addDoc(qCol, data);
+    }
+    setNewQ({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '' });
+  };
+
+  const handleModuleUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const htmlContent = event.target.result;
+      const mCol = collection(db, 'artifacts', appId, 'public', 'data', 'modules');
+      await addDoc(mCol, {
+        name: file.name.replace('.html', ''),
+        html: htmlContent,
+        addedAt: Date.now()
+      });
+      alert('Module uploaded successfully!');
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-3xl border shadow-sm flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Admin Controls</h1>
+          <p className="text-xs text-slate-400">Manage questions, results, and external modules.</p>
+        </div>
+        <div className="flex bg-slate-100 p-1 rounded-xl">
+          {['results', 'questions', 'modules'].map(t => (
+            <button key={t} onClick={() => setTab(t)} className={`px-5 py-2 rounded-lg text-sm font-bold capitalize transition-all ${tab === t ? 'bg-white shadow text-indigo-600' : 'text-slate-500'}`}>{t}</button>
+          ))}
+        </div>
+        <button onClick={exportCSV} className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-sm">Export Data</button>
+      </div>
+
+      {tab === 'results' && (
+        <div className="bg-white rounded-3xl border overflow-hidden shadow-sm">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 border-b text-xs uppercase text-slate-500">
+              <tr>
+                <th className="p-4">Student</th>
+                <th className="p-4">Module</th>
+                <th className="p-4">Score</th>
+                <th className="p-4">Time</th>
+                <th className="p-4">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {submissions.map((s, i) => (
+                <tr key={i} className="hover:bg-slate-50">
+                  <td className="p-4 font-bold">{s.admissionNo}</td>
+                  <td className="p-4 text-xs font-medium text-slate-500">{s.moduleName || 'Standard'}</td>
+                  <td className="p-4"><span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded font-bold">{s.score}</span></td>
+                  <td className="p-4 text-slate-400">{s.timeSpent}s</td>
+                  <td className="p-4 text-[10px] text-slate-400">{new Date(s.completedAt).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {tab === 'questions' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex justify-between items-center bg-white p-4 rounded-xl border">
+               <h2 className="font-bold">Questions ({questions.length})</h2>
+               <button onClick={() => csvRef.current.click()} className="text-xs font-bold text-indigo-600 underline">Bulk CSV Import</button>
+               <input type="file" ref={csvRef} className="hidden" accept=".csv" onChange={(e) => { /* Reuse previous CSV handler if needed */ }} />
+            </div>
+            {questions.map(q => (
+              <div key={q.id} className="bg-white p-4 rounded-2xl border shadow-sm flex justify-between group">
+                <div>
+                  <h4 className="font-bold text-slate-800">{q.text}</h4>
+                  <p className="text-xs text-green-600 font-bold">Key: {q.correct}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => { setEditingId(q.id); setNewQ(q); }} className="text-indigo-600">Edit</button>
+                  <button onClick={() => deleteDocItem('questions', q.id)} className="text-red-400">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="bg-white p-6 rounded-3xl border shadow-lg h-fit">
+            <h3 className="font-bold mb-4">{editingId ? 'Edit' : 'New'} Question</h3>
+            <textarea className="w-full p-3 border rounded-xl text-sm mb-4" placeholder="Question Text" value={newQ.text} onChange={e => setNewQ({...newQ, text: e.target.value})} />
+            <div className="flex gap-2 mb-4">
+               <button onClick={() => setNewQ({...newQ, type: 'mcq'})} className={`flex-1 py-1 text-xs rounded border ${newQ.type === 'mcq' ? 'bg-slate-800 text-white' : ''}`}>MCQ</button>
+               <button onClick={() => setNewQ({...newQ, type: 'short'})} className={`flex-1 py-1 text-xs rounded border ${newQ.type === 'short' ? 'bg-slate-800 text-white' : ''}`}>Short</button>
+            </div>
+            <input className="w-full p-3 border rounded-xl text-sm mb-4 font-bold bg-green-50" placeholder="Correct Answer" value={newQ.correct} onChange={e => setNewQ({...newQ, correct: e.target.value})} />
+            <button onClick={saveQ} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold">{editingId ? 'Update' : 'Add'}</button>
+          </div>
+        </div>
+      )}
+
+      {tab === 'modules' && (
+        <div className="bg-white p-8 rounded-3xl border shadow-sm">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-xl font-bold">External Quiz Modules</h2>
+            <button onClick={() => htmlModuleRef.current.click()} className="bg-emerald-500 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-emerald-600">Upload New Module (.html)</button>
+            <input type="file" ref={htmlModuleRef} className="hidden" accept=".html" onChange={handleModuleUpload} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {modules.map(m => (
+              <div key={m.id} className="p-4 border-2 border-slate-50 rounded-2xl flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600 font-bold">HTML</div>
+                  <span className="font-bold text-slate-700">{m.name}</span>
+                </div>
+                <button onClick={() => deleteDocItem('modules', m.id)} className="text-red-400 hover:text-red-600 text-xs font-bold">Remove</button>
+              </div>
+            ))}
+            {modules.length === 0 && <div className="col-span-2 text-center py-10 text-slate-300 italic">No custom modules uploaded yet.</div>}
+          </div>
+          <div className="mt-8 bg-blue-50 p-4 rounded-xl border border-blue-100">
+             <p className="text-xs text-blue-700 font-medium">Tip: Use this to host independent quiz files, flashcards, or interactive lessons. Note that results from external modules must be handled within the uploaded HTML or manually reported, unless you use postMessage to communicate with this portal.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
