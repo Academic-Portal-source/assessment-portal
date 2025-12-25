@@ -3,18 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Class-Specific Assessment Portal</title>
+    <title>Academic Portal</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Crimson+Pro:wght@600;700&display=swap');
+        
+        :root {
+            --brand-navy: #0f172a;
+            --brand-accent: #2563eb;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc;
+        }
+
+        .serif-title {
+            font-family: 'Crimson Pro', serif;
+        }
+
+        select { 
+            appearance: none; 
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
+            background-repeat: no-repeat; 
+            background-position: right 1rem center; 
+            background-size: 1em; 
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="text-slate-900">
     <div id="root"></div>
 
     <script type="module">
@@ -84,48 +110,52 @@
                         setStudentClass(student.studentClass);
                         setView('dashboard');
                     } else {
-                        alert("Admission Number not found in database.");
+                        alert("Invalid Credentials. Please check your Admission Number.");
                     }
                     setLoading(false);
-                }, 600);
+                }, 800);
             };
 
             return (
-                <div className="min-h-screen flex flex-col">
-                    <nav className="bg-white/80 backdrop-blur-md border-b px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => {if(view!=='quiz') setView('login');}}>
-                            <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-2 rounded-xl text-white shadow-lg">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                <div className="min-h-screen flex flex-col font-sans">
+                    {/* Academic Header */}
+                    <nav className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+                        <div className="flex items-center gap-4 cursor-pointer" onClick={() => {if(view!=='quiz' && view!=='external') setView('login');}}>
+                            <div className="bg-slate-900 p-2.5 rounded shadow-sm">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                             </div>
-                            <span className="text-xl font-extrabold tracking-tight text-slate-900">EduPortal</span>
+                            <div>
+                                <h1 className="text-lg font-bold tracking-tight text-slate-900 uppercase">Academic Portal</h1>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] leading-none">Institutional Excellence</p>
+                            </div>
                         </div>
                         {view !== 'login' && view !== 'admin-login' && (
-                            <div className="flex items-center gap-6">
-                                {studentClass && (
-                                    <div className="text-right hidden sm:block">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Authenticated</p>
-                                        <p className="text-sm font-bold text-indigo-600 uppercase">Class {studentClass}</p>
+                            <div className="flex items-center gap-8">
+                                {studentClass && view !== 'quiz' && view !== 'external' && (
+                                    <div className="text-right hidden sm:block border-r border-slate-200 pr-8">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Session Active</p>
+                                        <p className="text-sm font-semibold text-slate-700">Class {studentClass} | {admissionNo.toUpperCase()}</p>
                                     </div>
                                 )}
-                                <button onClick={() => {setView('login'); setAdmissionNo(''); setStudentClass('');}} className="px-4 py-2 bg-slate-100 hover:bg-red-50 hover:text-red-600 rounded-xl text-xs font-bold transition-all">Logout</button>
+                                <button onClick={() => {setView('login'); setAdmissionNo(''); setStudentClass('');}} className="text-xs font-bold text-slate-500 hover:text-red-600 transition-colors uppercase tracking-widest">Sign Out</button>
                             </div>
                         )}
                     </nav>
 
-                    <main className="flex-1 flex flex-col p-4 md:p-8">
+                    <main className="flex-1 flex flex-col p-6 md:p-12 max-w-7xl mx-auto w-full">
                         {view === 'login' && (
-                            <div className="max-w-md w-full mx-auto my-auto space-y-8">
-                                <div className="text-center">
-                                    <h1 className="text-4xl font-black text-slate-900">Welcome Back</h1>
-                                    <p className="text-slate-500 mt-2">Enter your credentials to access your class tasks.</p>
+                            <div className="max-w-md w-full mx-auto my-auto space-y-10 py-12">
+                                <div className="text-center space-y-2">
+                                    <h2 className="serif-title text-4xl text-slate-900">Student Access</h2>
+                                    <p className="text-slate-500 text-sm">Please verify your identity using your institutional credentials.</p>
                                 </div>
-                                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100">
+                                <div className="bg-white p-10 rounded-xl border border-slate-200 shadow-xl shadow-slate-200/40">
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block">Admission Number</label>
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block text-center">Admission Number</label>
                                             <input 
-                                                className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white p-4 rounded-2xl outline-none font-bold text-lg transition-all text-center uppercase" 
-                                                placeholder="e.g. ADM-001"
+                                                className="w-full bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 p-4 rounded-lg outline-none font-medium text-lg transition-all text-center uppercase" 
+                                                placeholder="e.g. ADM-2024-01"
                                                 value={admissionNo}
                                                 onChange={e => setAdmissionNo(e.target.value)}
                                                 onKeyDown={e => e.key === 'Enter' && enterPortal()}
@@ -134,112 +164,126 @@
                                         <button 
                                             onClick={enterPortal}
                                             disabled={loading}
-                                            className="w-full bg-slate-900 text-white p-5 rounded-2xl font-bold shadow-xl hover:bg-black active:scale-95 transition-all disabled:opacity-50"
+                                            className="w-full bg-slate-900 text-white p-4 rounded-lg font-semibold hover:bg-slate-800 active:bg-slate-950 transition-all disabled:opacity-50 shadow-lg shadow-slate-900/20"
                                         >
-                                            {loading ? 'Verifying...' : 'Access Dashboard'}
+                                            {loading ? 'Validating...' : 'Enter Student Portal'}
                                         </button>
                                     </div>
-                                    <div className="mt-8 pt-6 border-t border-slate-50 text-center">
-                                        <button onClick={() => setView('admin-login')} className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">Admin Portal</button>
+                                    <div className="mt-10 pt-6 border-t border-slate-100 text-center">
+                                        <button onClick={() => setView('admin-login')} className="text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-widest">Faculty & Staff Portal</button>
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {view === 'admin-login' && (
-                            <div className="max-w-md w-full mx-auto my-auto bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-100">
-                                <h2 className="text-2xl font-bold text-center mb-6">Staff Login</h2>
-                                <input 
-                                    type="password" 
-                                    className="w-full bg-slate-50 p-4 rounded-2xl mb-4 border-2 border-transparent focus:border-slate-900 outline-none transition-all text-center font-bold"
-                                    placeholder="Access Key"
-                                    value={adminPassInput}
-                                    onChange={e => setAdminPassInput(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && (adminPassInput === ADMIN_PASS ? setView('admin-dashboard') : alert('Wrong Key'))}
-                                />
-                                <button onClick={() => adminPassInput === ADMIN_PASS ? setView('admin-dashboard') : alert('Wrong Key')} className="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold mb-4">Verify Identity</button>
-                                <button onClick={() => setView('login')} className="w-full text-slate-400 font-bold text-xs uppercase">Back</button>
+                            <div className="max-w-md w-full mx-auto my-auto bg-white p-12 rounded-xl border border-slate-200 shadow-xl">
+                                <h2 className="serif-title text-3xl text-center mb-8">Faculty Authentication</h2>
+                                <div className="space-y-4">
+                                    <input 
+                                        type="password" 
+                                        className="w-full bg-slate-50 p-4 rounded-lg border border-slate-200 focus:border-slate-900 outline-none transition-all text-center font-bold"
+                                        placeholder="Institutional Key"
+                                        value={adminPassInput}
+                                        onChange={e => setAdminPassInput(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && (adminPassInput === ADMIN_PASS ? setView('admin-dashboard') : alert('Authentication Failed'))}
+                                    />
+                                    <button onClick={() => adminPassInput === ADMIN_PASS ? setView('admin-dashboard') : alert('Authentication Failed')} className="w-full bg-slate-900 text-white p-4 rounded-lg font-bold">Verify Credentials</button>
+                                    <button onClick={() => setView('login')} className="w-full text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-4">Cancel Access</button>
+                                </div>
                             </div>
                         )}
 
                         {view === 'dashboard' && (
-                            <div className="max-w-5xl mx-auto w-full">
-                                <div className="mb-10">
-                                    <h2 className="text-4xl font-black text-slate-900 leading-tight">Your Assessments</h2>
-                                    <p className="text-slate-500 mt-2">Personalized tasks for Class <span className="font-bold text-indigo-600">{studentClass}</span></p>
+                            <div className="animate-in fade-in duration-700">
+                                <div className="mb-12 border-b border-slate-200 pb-8 flex justify-between items-end">
+                                    <div>
+                                        <h2 className="serif-title text-5xl text-slate-900 leading-tight">Curriculum Dashboard</h2>
+                                        <p className="text-slate-500 mt-2 text-lg">Academic Year 2024/25 — <span className="font-semibold text-slate-900">Class {studentClass}</span></p>
+                                    </div>
                                 </div>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <div className="bg-white p-8 rounded-[2rem] border-2 border-slate-100 hover:border-indigo-500 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between" onClick={() => setView('quiz')}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {/* Quiz Card */}
+                                    <div className="bg-white p-8 rounded-xl border border-slate-200 hover:border-slate-900 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between" onClick={() => setView('quiz')}>
                                         <div>
-                                            <div className="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
-                                                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                            <div className="w-12 h-12 border border-slate-200 text-slate-900 rounded-lg flex items-center justify-center mb-8 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                                             </div>
-                                            <h3 className="text-2xl font-bold text-slate-800">Class Quiz</h3>
-                                            <p className="text-slate-400 text-sm mt-2 mb-6">A set of {filteredQuestions.length} questions tailored for your curriculum.</p>
+                                            <h3 className="text-xl font-bold text-slate-900 uppercase tracking-tight">Main Assessment</h3>
+                                            <p className="text-slate-500 text-sm mt-3 mb-8 leading-relaxed">Standard curriculum examination consisting of {filteredQuestions.length} rigorous items.</p>
                                         </div>
-                                        <div className="flex items-center text-indigo-600 font-bold text-sm">
-                                            Start Assessment <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
+                                        <div className="pt-6 border-t border-slate-100 flex items-center text-slate-900 font-bold text-xs uppercase tracking-widest">
+                                            Begin Examination <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
                                         </div>
                                     </div>
 
+                                    {/* Module Cards */}
                                     {filteredModules.map(m => (
-                                        <div key={m.id} className="bg-white p-8 rounded-[2rem] border-2 border-slate-100 hover:border-emerald-500 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between" onClick={() => { setActiveModule(m); setView('external'); }}>
+                                        <div key={m.id} className="bg-white p-8 rounded-xl border border-slate-200 hover:border-slate-900 hover:shadow-2xl transition-all cursor-pointer group flex flex-col justify-between" onClick={() => { setActiveModule(m); setView('external'); }}>
                                             <div>
-                                                <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6">
-                                                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                <div className="w-12 h-12 border border-slate-200 text-slate-900 rounded-lg flex items-center justify-center mb-8 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                                                 </div>
-                                                <h3 className="text-2xl font-bold text-slate-800">{m.name}</h3>
-                                                <p className="text-slate-400 text-sm mt-2 mb-6">Interactive module for Class {m.targetClass}.</p>
+                                                <h3 className="text-xl font-bold text-slate-900 uppercase tracking-tight">{m.name.split('.')[0]}</h3>
+                                                <p className="text-slate-500 text-sm mt-3 mb-8 leading-relaxed">Interactive educational unit designed for specific learning outcomes.</p>
                                             </div>
-                                            <div className="flex items-center text-emerald-600 font-bold text-sm">
+                                            <div className="pt-6 border-t border-slate-100 flex items-center text-slate-900 font-bold text-xs uppercase tracking-widest">
                                                 Launch Module <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
                                             </div>
                                         </div>
                                     ))}
 
                                     {(filteredQuestions.length === 0 && filteredModules.length === 0) && (
-                                        <div className="col-span-full py-20 text-center bg-slate-100 rounded-[2rem] border-2 border-dashed border-slate-200">
-                                            <p className="text-slate-400 font-bold">No assessments assigned to your class yet.</p>
+                                        <div className="col-span-full py-24 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+                                            <p className="text-slate-400 font-medium italic">No curriculum units are currently assigned to Class {studentClass}.</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
 
-                        {view === 'quiz' && <QuizEngine questions={filteredQuestions} admissionNo={admissionNo} studentClass={studentClass} onComplete={() => setView('success')} />}
+                        {view === 'quiz' && <QuizEngine questions={filteredQuestions} admissionNo={admissionNo} studentClass={studentClass} onComplete={() => setView('success')} onBack={() => setView('dashboard')} />}
 
                         {view === 'external' && activeModule && (
-                            <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in slide-in-from-bottom duration-500">
-                                <div className="p-4 bg-slate-900 text-white flex justify-between items-center px-8">
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-xs font-black bg-white/10 px-3 py-1 rounded-full uppercase">Class {activeModule.targetClass}</span>
-                                        <h2 className="font-bold">{activeModule.name}</h2>
+                            <div className="fixed inset-0 z-[100] bg-slate-50 flex flex-col animate-in slide-in-from-bottom duration-500">
+                                <div className="p-4 bg-white border-b border-slate-200 flex justify-between items-center px-8 shadow-sm">
+                                    <div className="flex items-center gap-6">
+                                        <button onClick={() => setView('dashboard')} className="p-2 hover:bg-slate-100 rounded-lg transition-colors group">
+                                            <svg className="w-5 h-5 text-slate-600 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                                        </button>
+                                        <div className="h-6 w-px bg-slate-200"></div>
+                                        <div>
+                                            <h2 className="font-bold text-slate-900 uppercase tracking-tight text-sm">{activeModule.name}</h2>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Interactive Unit • Class {activeModule.targetClass}</p>
+                                        </div>
                                     </div>
-                                    <button onClick={() => setView('dashboard')} className="bg-red-500 px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-600 transition-colors">Exit Task</button>
+                                    <button onClick={() => setView('dashboard')} className="bg-red-50 text-red-600 px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-red-100 transition-colors">Terminate Session</button>
                                 </div>
-                                <iframe srcDoc={activeModule.html} className="flex-1 w-full" sandbox="allow-scripts" />
+                                <div className="flex-1 bg-white mx-auto w-full max-w-6xl my-6 border border-slate-200 rounded-xl overflow-hidden shadow-2xl">
+                                    <iframe srcDoc={activeModule.html} className="w-full h-full" sandbox="allow-scripts" />
+                                </div>
                             </div>
                         )}
 
                         {view === 'success' && (
-                            <div className="max-w-xl mx-auto my-auto text-center bg-white p-16 rounded-[3rem] shadow-2xl border border-slate-100">
-                                <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
-                                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                            <div className="max-w-xl mx-auto my-auto text-center bg-white p-16 rounded-xl border border-slate-200 shadow-2xl">
+                                <div className="w-20 h-20 border-4 border-slate-900 text-slate-900 rounded-full flex items-center justify-center mx-auto mb-10">
+                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                                 </div>
-                                <h2 className="text-4xl font-black mb-4">Submission Saved!</h2>
-                                <p className="text-slate-500 text-lg mb-10">Great job, {admissionNo}. Your results for <span className="font-bold text-slate-800">Class {studentClass}</span> have been sent to the teacher.</p>
-                                <button onClick={() => {setView('login'); setAdmissionNo('');}} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold shadow-xl">Return to Login</button>
+                                <h2 className="serif-title text-4xl mb-4">Submission Finalized</h2>
+                                <p className="text-slate-500 text-lg mb-12">Examination for Class {studentClass} has been recorded successfully. Please notify your proctor before exiting.</p>
+                                <button onClick={() => {setView('login'); setAdmissionNo('');}} className="w-full bg-slate-900 text-white py-5 rounded-lg font-bold shadow-xl tracking-widest uppercase text-xs">Return to Main Entry</button>
                             </div>
                         )}
 
-                        {view === 'admin-dashboard' && <AdminPanel submissions={submissions} questions={questions} modules={modules} roster={studentRoster} />}
+                        {view === 'admin-dashboard' && <AdminPanel submissions={submissions} questions={questions} modules={modules} roster={studentRoster} onBack={() => setView('login')} />}
                     </main>
                 </div>
             );
         }
 
-        function QuizEngine({ questions, admissionNo, studentClass, onComplete }) {
+        function QuizEngine({ questions, admissionNo, studentClass, onComplete, onBack }) {
             const [idx, setIdx] = useState(0);
             const [ans, setAns] = useState({});
             const start = useRef(Date.now());
@@ -258,38 +302,52 @@
             };
 
             const q = questions[idx];
-            if(!q) return <div className="text-center py-20 font-bold">Error loading questions.</div>;
+            if(!q) return <div className="text-center py-24 italic text-slate-400">Loading curriculum unit...</div>;
 
             return (
-                <div className="max-w-2xl mx-auto w-full bg-white p-12 rounded-[2.5rem] shadow-2xl border border-slate-50">
-                    <div className="flex justify-between items-center mb-10">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Step {idx + 1} / {questions.length}</span>
-                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-indigo-600 transition-all" style={{width: `${((idx+1)/questions.length)*100}%`}}></div>
+                <div className="max-w-3xl mx-auto w-full">
+                    <div className="mb-8 flex justify-between items-center">
+                        <button onClick={onBack} className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-colors group">
+                            <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                            Exit to Dashboard
+                        </button>
+                        <div className="text-right">
+                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progress</p>
+                             <p className="text-sm font-bold text-slate-900">{idx + 1} of {questions.length}</p>
                         </div>
                     </div>
-                    <h2 className="text-3xl font-extrabold mb-10 text-slate-900 leading-tight">{q.text}</h2>
-                    <div className="space-y-4">
-                        {q.type === 'mcq' ? (q.options || []).map((o, i) => (
-                            <button key={i} onClick={() => setAns({...ans, [idx]: o})} className={`w-full p-6 text-left rounded-2xl border-2 transition-all font-bold ${ans[idx] === o ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}>
-                                <span className="inline-block w-8 h-8 rounded-lg bg-white border shadow-sm mr-4 text-center leading-8 text-xs">{String.fromCharCode(65+i)}</span> {o}
-                            </button>
-                        )) : (
-                            <input className="w-full p-6 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 outline-none text-xl font-bold bg-slate-50" placeholder="Type answer..." value={ans[idx]||''} onChange={e => setAns({...ans, [idx]: e.target.value})} />
-                        )}
-                    </div>
-                    <div className="flex justify-between mt-16">
-                        <button disabled={idx===0} onClick={() => setIdx(idx-1)} className="text-slate-400 font-bold disabled:opacity-0 hover:text-slate-900">Back</button>
-                        {idx === questions.length - 1 ? 
-                            <button onClick={finish} className="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-extrabold shadow-lg shadow-indigo-100">Submit Final</button> :
-                            <button onClick={() => setIdx(idx+1)} className="bg-slate-900 text-white px-12 py-4 rounded-2xl font-extrabold hover:bg-black transition-all">Continue →</button>
-                        }
+
+                    <div className="bg-white p-12 rounded-xl border border-slate-200 shadow-xl">
+                        <div className="w-full h-1 bg-slate-100 rounded-full mb-12 overflow-hidden">
+                            <div className="h-full bg-slate-900 transition-all duration-500" style={{width: `${((idx+1)/questions.length)*100}%`}}></div>
+                        </div>
+                        
+                        <h2 className="serif-title text-3xl mb-12 text-slate-900 leading-snug">{q.text}</h2>
+                        
+                        <div className="space-y-3">
+                            {q.type === 'mcq' ? (q.options || []).map((o, i) => (
+                                <button key={i} onClick={() => setAns({...ans, [idx]: o})} className={`w-full p-5 text-left rounded-lg border transition-all font-medium flex items-center ${ans[idx] === o ? 'border-slate-900 bg-slate-50 text-slate-900' : 'border-slate-200 bg-white hover:border-slate-400'}`}>
+                                    <span className={`w-6 h-6 rounded border mr-4 flex items-center justify-center text-[10px] font-bold ${ans[idx] === o ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>{String.fromCharCode(65+i)}</span> 
+                                    {o}
+                                </button>
+                            )) : (
+                                <input className="w-full p-6 border border-slate-200 rounded-lg focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 outline-none text-xl font-medium bg-slate-50 transition-all" placeholder="Enter academic response..." value={ans[idx]||''} onChange={e => setAns({...ans, [idx]: e.target.value})} />
+                            )}
+                        </div>
+
+                        <div className="flex justify-between mt-16 pt-8 border-t border-slate-100">
+                            <button disabled={idx===0} onClick={() => setIdx(idx-1)} className="text-slate-400 font-bold text-xs uppercase tracking-widest disabled:opacity-0 hover:text-slate-900 transition-colors">Previous Item</button>
+                            {idx === questions.length - 1 ? 
+                                <button onClick={finish} className="bg-slate-900 text-white px-10 py-4 rounded-lg font-bold shadow-lg shadow-slate-900/10 uppercase text-xs tracking-[0.2em] hover:bg-slate-800">Submit Examination</button> :
+                                <button onClick={() => setIdx(idx+1)} className="bg-slate-900 text-white px-10 py-4 rounded-lg font-bold hover:bg-slate-800 transition-all uppercase text-xs tracking-[0.2em]">Next Item →</button>
+                            }
+                        </div>
                     </div>
                 </div>
             );
         }
 
-        function AdminPanel({ submissions, questions, modules, roster }) {
+        function AdminPanel({ submissions, questions, modules, roster, onBack }) {
             const [tab, setTab] = useState('results');
             const [qFilterClass, setQFilterClass] = useState('');
             const [newQ, setNewQ] = useState({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '', targetClass: '1' });
@@ -299,14 +357,14 @@
             const htmlRef = useRef();
 
             const saveQuestion = async () => {
-                if(!newQ.text || !newQ.correct) return alert("Fill Question and Answer!");
+                if(!newQ.text || !newQ.correct) return alert("Fill all academic fields.");
                 const { db, collection, addDoc } = window.FB;
                 await addDoc(collection(db, 'questions'), {...newQ, options: newQ.options.filter(o => o.trim())});
                 setNewQ({ ...newQ, text: '', options: ['', '', '', ''], correct: '' });
             };
 
             const del = async (col, id) => {
-                if(confirm('Delete permanently?')) await window.FB.deleteDoc(window.FB.doc(window.FB.db, col, id));
+                if(confirm('Confirm permanent deletion of record?')) await window.FB.deleteDoc(window.FB.doc(window.FB.db, col, id));
             };
 
             const importRoster = (e) => {
@@ -320,7 +378,7 @@
                         const [adm, cls] = lines[i].split(',');
                         if (adm && cls) await addDoc(collection(db, 'roster'), { admissionNo: adm.trim().toUpperCase(), studentClass: cls.trim() });
                     }
-                    alert("Roster Imported");
+                    alert("Institutional Roster Synced");
                 };
                 reader.readAsText(file);
             };
@@ -335,37 +393,35 @@
                         targetClass: uploadClass,
                         addedAt: Date.now()
                     });
-                    alert("Module assigned to Class " + uploadClass);
+                    alert("Educational Module Assigned to Class " + uploadClass);
                 };
                 reader.readAsText(file);
             };
 
             return (
-                <div className="max-w-6xl mx-auto w-full space-y-6 pb-20">
-                    <div className="bg-white p-6 rounded-[2rem] border shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex bg-slate-100 p-1.5 rounded-2xl overflow-x-auto w-full md:w-auto">
+                <div className="max-w-6xl mx-auto w-full space-y-8 animate-in fade-in duration-500">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="flex bg-slate-50 p-1 rounded-lg w-full md:w-auto overflow-x-auto">
                             {['results', 'students', 'curriculum', 'modules'].map(t => (
-                                <button key={t} onClick={() => setTab(t)} className={`px-6 py-2.5 rounded-xl text-sm font-bold capitalize transition-all whitespace-nowrap ${tab === t ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}>{t}</button>
+                                <button key={t} onClick={() => setTab(t)} className={`px-6 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${tab === t ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}>{t}</button>
                             ))}
                         </div>
-                        <div className="flex gap-2">
-                            <span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-lg uppercase tracking-widest">Admin Mode</span>
-                        </div>
+                        <button onClick={onBack} className="text-[10px] font-bold text-slate-400 hover:text-red-600 uppercase tracking-widest border-l border-slate-100 pl-6">Exit Faculty Panel</button>
                     </div>
 
                     {tab === 'results' && (
-                        <div className="bg-white rounded-[2rem] border shadow-sm overflow-hidden">
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <table className="w-full text-left">
-                                <thead className="bg-slate-50 text-[10px] font-black text-slate-400 border-b uppercase tracking-widest">
-                                    <tr><th className="p-6">Student</th><th className="p-6">Class</th><th className="p-6">Score</th><th className="p-6">Date</th></tr>
+                                <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 border-b border-slate-200 uppercase tracking-[0.2em]">
+                                    <tr><th className="p-6">Student Credential</th><th className="p-6 text-center">Class</th><th className="p-6 text-center">Score Metric</th><th className="p-6 text-right">Completion Date</th></tr>
                                 </thead>
-                                <tbody className="divide-y text-sm">
+                                <tbody className="divide-y divide-slate-100 text-sm">
                                     {submissions.sort((a,b)=>b.completedAt-a.completedAt).map((s, i) => (
-                                        <tr key={i} className="hover:bg-slate-50/50">
-                                            <td className="p-6 font-bold">{s.admissionNo}</td>
-                                            <td className="p-6"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold">Class {s.studentClass}</span></td>
-                                            <td className="p-6 font-black text-indigo-700">{s.score}</td>
-                                            <td className="p-6 text-slate-400">{new Date(s.completedAt).toLocaleDateString()}</td>
+                                        <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                                            <td className="p-6 font-semibold text-slate-900">{s.admissionNo.toUpperCase()}</td>
+                                            <td className="p-6 text-center"><span className="px-3 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-tighter">Class {s.studentClass}</span></td>
+                                            <td className="p-6 text-center font-bold text-slate-900">{s.score}</td>
+                                            <td className="p-6 text-right text-slate-400 font-medium">{new Date(s.completedAt).toLocaleDateString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -374,28 +430,28 @@
                     )}
 
                     {tab === 'students' && (
-                        <div className="space-y-4">
-                            <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex justify-between items-center shadow-xl shadow-indigo-100">
+                        <div className="space-y-6">
+                            <div className="bg-slate-900 p-10 rounded-xl text-white flex justify-between items-center shadow-xl shadow-slate-900/10">
                                 <div>
-                                    <h3 className="text-2xl font-bold">Student Directory</h3>
-                                    <p className="opacity-80 text-sm">Manage class assignments. CSV Format: AdmissionNo,Class</p>
+                                    <h3 className="serif-title text-3xl">Registrar's Office</h3>
+                                    <p className="opacity-60 text-xs font-medium tracking-wide mt-1">Bulk manage student class assignments via CSV import.</p>
                                 </div>
-                                <div className="flex gap-3">
+                                <div className="flex gap-4">
                                     <input type="file" ref={rosterRef} className="hidden" onChange={importRoster} />
-                                    <button onClick={() => rosterRef.current.click()} className="bg-white text-indigo-600 px-6 py-3 rounded-2xl font-bold text-sm shadow-lg">Import Roster (.csv)</button>
+                                    <button onClick={() => rosterRef.current.click()} className="bg-white text-slate-900 px-8 py-3 rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-colors">Synchronize Roster</button>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-[2rem] border overflow-hidden">
+                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                                 <table className="w-full text-left">
-                                    <thead className="bg-slate-50 text-[10px] font-black text-slate-400 p-6 border-b uppercase">
-                                        <tr><th className="p-6">Admission No</th><th className="p-6">Assigned Class</th><th className="p-6">Action</th></tr>
+                                    <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 border-b border-slate-200 uppercase tracking-widest">
+                                        <tr><th className="p-6">Identity Tag</th><th className="p-6">Assigned Level</th><th className="p-6 text-right">Records Management</th></tr>
                                     </thead>
-                                    <tbody className="divide-y text-sm">
+                                    <tbody className="divide-y divide-slate-100 text-sm">
                                         {roster.map(r => (
-                                            <tr key={r.id} className="hover:bg-slate-50/50">
-                                                <td className="p-6 font-bold">{r.admissionNo}</td>
-                                                <td className="p-6 font-bold text-indigo-600">Class {r.studentClass}</td>
-                                                <td className="p-6"><button onClick={() => del('roster', r.id)} className="text-red-400 hover:text-red-600 font-bold">Delete</button></td>
+                                            <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="p-6 font-semibold">{r.admissionNo}</td>
+                                                <td className="p-6 font-bold text-slate-900">Class {r.studentClass}</td>
+                                                <td className="p-6 text-right"><button onClick={() => del('roster', r.id)} className="text-red-400 hover:text-red-600 font-bold text-[10px] uppercase tracking-widest">Purge</button></td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -405,91 +461,109 @@
                     )}
 
                     {tab === 'curriculum' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 space-y-4">
-                                <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-                                    <button onClick={() => setQFilterClass('')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border-2 ${qFilterClass === '' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-100 text-slate-400'}`}>All Classes</button>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                            <div className="lg:col-span-2 space-y-6">
+                                <div className="flex gap-2 pb-4 overflow-x-auto border-b border-slate-100">
+                                    <button onClick={() => setQFilterClass('')} className={`px-4 py-2 rounded text-[10px] font-bold tracking-widest uppercase border transition-all ${qFilterClass === '' ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-400'}`}>All Tiers</button>
                                     {CLASS_OPTIONS.map(c => (
-                                        <button key={c} onClick={() => setQFilterClass(c)} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border-2 ${qFilterClass === c ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-100 text-slate-400'}`}>Class {c}</button>
+                                        <button key={c} onClick={() => setQFilterClass(c)} className={`px-4 py-2 rounded text-[10px] font-bold tracking-widest uppercase border transition-all ${qFilterClass === c ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-400'}`}>Class {c}</button>
                                     ))}
                                 </div>
-                                {questions.filter(q => !qFilterClass || q.targetClass === qFilterClass).map(q => (
-                                    <div key={q.id} className="bg-white p-6 rounded-2xl border flex justify-between group hover:border-indigo-200 transition-all">
-                                        <div>
-                                            <span className="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded mb-2 inline-block">Class {q.targetClass}</span>
-                                            <p className="font-bold text-slate-800">{q.text}</p>
-                                            <p className="text-xs text-green-600 mt-2 font-bold uppercase">Correct: {q.correct}</p>
-                                        </div>
-                                        <button onClick={() => del('questions', q.id)} className="text-red-400 opacity-0 group-hover:opacity-100 font-bold text-xs">DEL</button>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="bg-white p-8 rounded-[2.5rem] border shadow-xl h-fit sticky top-24">
-                                <h3 className="font-bold text-lg mb-6">Create Question</h3>
                                 <div className="space-y-4">
+                                    {questions.filter(q => !qFilterClass || q.targetClass === qFilterClass).map(q => (
+                                        <div key={q.id} className="bg-white p-6 rounded-lg border border-slate-200 flex justify-between items-start group hover:border-slate-400 transition-all">
+                                            <div>
+                                                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 border border-slate-100 px-2 py-0.5 rounded mb-3 inline-block">Tier {q.targetClass}</span>
+                                                <p className="font-semibold text-slate-800 leading-relaxed">{q.text}</p>
+                                                <p className="text-[10px] text-slate-400 mt-3 font-bold uppercase tracking-widest">Key: <span className="text-slate-900">{q.correct}</span></p>
+                                            </div>
+                                            <button onClick={() => del('questions', q.id)} className="text-red-300 hover:text-red-600 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="bg-white p-10 rounded-xl border border-slate-200 shadow-xl h-fit sticky top-28">
+                                <h3 className="serif-title text-2xl mb-8">Item Creation</h3>
+                                <div className="space-y-6">
                                     <div>
-                                        <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Target Class</label>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 mb-2 block tracking-widest">Target Class Level</label>
                                         <select 
-                                            className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-indigo-100 outline-none text-sm font-bold cursor-pointer" 
+                                            className="w-full p-4 bg-slate-50 rounded border border-slate-200 focus:border-slate-900 outline-none text-xs font-bold cursor-pointer" 
                                             value={newQ.targetClass} 
                                             onChange={e => setNewQ({...newQ, targetClass: e.target.value})}
                                         >
-                                            {CLASS_OPTIONS.map(opt => <option key={opt} value={opt}>Class {opt}</option>)}
+                                            {CLASS_OPTIONS.map(opt => <option key={opt} value={opt}>Academic Level {opt}</option>)}
                                         </select>
                                     </div>
-                                    <textarea className="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-indigo-100 outline-none text-sm h-32" placeholder="Question Text..." value={newQ.text} onChange={e => setNewQ({...newQ, text: e.target.value})} />
-                                    <div className="flex gap-2">
-                                        <button onClick={() => setNewQ({...newQ, type:'mcq'})} className={`flex-1 py-3 text-[10px] font-black rounded-xl border ${newQ.type==='mcq'?'bg-slate-900 text-white':'bg-slate-50 text-slate-400'}`}>MCQ</button>
-                                        <button onClick={() => setNewQ({...newQ, type:'short'})} className={`flex-1 py-3 text-[10px] font-black rounded-xl border ${newQ.type==='short'?'bg-slate-900 text-white':'bg-slate-50 text-slate-400'}`}>SHORT</button>
+                                    <div>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 mb-2 block tracking-widest">Inquiry Text</label>
+                                        <textarea className="w-full p-4 bg-slate-50 rounded border border-slate-200 focus:border-slate-900 outline-none text-sm h-32 leading-relaxed" placeholder="Formal inquiry text..." value={newQ.text} onChange={e => setNewQ({...newQ, text: e.target.value})} />
                                     </div>
-                                    {newQ.type === 'mcq' && newQ.options.map((o, i) => (
-                                        <input key={i} className="w-full p-3 bg-slate-50 rounded-xl text-xs" placeholder={`Option ${i+1}`} value={o} onChange={e => {
-                                            const copy = [...newQ.options];
-                                            copy[i] = e.target.value;
-                                            setNewQ({...newQ, options: copy});
-                                        }} />
-                                    ))}
-                                    <input className="w-full p-4 bg-green-50 rounded-2xl text-sm font-bold text-green-700 placeholder-green-300" placeholder="Correct Answer" value={newQ.correct} onChange={e => setNewQ({...newQ, correct: e.target.value})} />
-                                    <button onClick={saveQuestion} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-100">Add to Class Bank</button>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setNewQ({...newQ, type:'mcq'})} className={`flex-1 py-3 text-[10px] font-bold tracking-widest rounded border transition-all ${newQ.type==='mcq'?'bg-slate-900 border-slate-900 text-white shadow-lg':'bg-white text-slate-400'}`}>MCQ</button>
+                                        <button onClick={() => setNewQ({...newQ, type:'short'})} className={`flex-1 py-3 text-[10px] font-bold tracking-widest rounded border transition-all ${newQ.type==='short'?'bg-slate-900 border-slate-900 text-white shadow-lg':'bg-white text-slate-400'}`}>SHORT</button>
+                                    </div>
+                                    {newQ.type === 'mcq' && (
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400 mb-2 block tracking-widest">Academic Options</label>
+                                            {newQ.options.map((o, i) => (
+                                                <input key={i} className="w-full p-3 bg-slate-50 rounded border border-slate-100 text-xs" placeholder={`Option ${String.fromCharCode(65+i)}`} value={o} onChange={e => {
+                                                    const copy = [...newQ.options];
+                                                    copy[i] = e.target.value;
+                                                    setNewQ({...newQ, options: copy});
+                                                }} />
+                                            ))}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 mb-2 block tracking-widest">Valid Response Key</label>
+                                        <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded text-sm font-bold text-slate-900" placeholder="Specify valid response..." value={newQ.correct} onChange={e => setNewQ({...newQ, correct: e.target.value})} />
+                                    </div>
+                                    <button onClick={saveQuestion} className="w-full bg-slate-900 text-white py-4 rounded font-bold shadow-xl shadow-slate-900/10 text-[10px] uppercase tracking-[0.2em] hover:bg-slate-800 transition-all">Archive Question</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {tab === 'modules' && (
-                        <div className="bg-white p-10 rounded-[2.5rem] border shadow-sm">
-                            <div className="max-w-md mx-auto text-center space-y-6">
-                                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                        <div className="bg-white p-12 rounded-xl border border-slate-200 shadow-sm">
+                            <div className="max-w-md mx-auto text-center space-y-8">
+                                <div className="w-20 h-20 border border-slate-200 text-slate-900 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                 </div>
-                                <div>
-                                    <h3 className="text-2xl font-bold">Upload Custom Task</h3>
-                                    <p className="text-slate-400 text-sm mt-2">Target a specific class with interactive HTML content.</p>
+                                <div className="space-y-2">
+                                    <h3 className="serif-title text-3xl">Module Integration</h3>
+                                    <p className="text-slate-400 text-sm italic">Assign complex interactive units to specific academic levels.</p>
                                 </div>
-                                <div className="space-y-4">
+                                <div className="space-y-4 pt-4">
                                     <div className="text-left">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block text-center">Assign to Class</label>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 mb-3 block text-center tracking-widest">Level Designation</label>
                                         <select 
-                                            className="w-full p-4 bg-slate-100 rounded-2xl font-bold text-center border-2 border-transparent focus:border-emerald-500 outline-none transition-all cursor-pointer" 
+                                            className="w-full p-4 bg-slate-50 rounded border border-slate-200 font-bold text-center text-xs outline-none transition-all cursor-pointer focus:border-slate-900" 
                                             value={uploadClass} 
                                             onChange={e => setUploadClass(e.target.value)}
                                         >
-                                            {CLASS_OPTIONS.map(opt => <option key={opt} value={opt}>Class {opt}</option>)}
+                                            {CLASS_OPTIONS.map(opt => <option key={opt} value={opt}>Academic Level {opt}</option>)}
                                         </select>
                                     </div>
-                                    <button onClick={() => htmlRef.current.click()} className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-emerald-700 transition-all">Select .HTML File</button>
+                                    <button onClick={() => htmlRef.current.click()} className="w-full bg-slate-900 text-white py-4 rounded font-bold shadow-lg hover:bg-slate-800 transition-all uppercase text-[10px] tracking-widest">Upload Resource (.html)</button>
                                     <input type="file" ref={htmlRef} className="hidden" accept=".html" onChange={uploadHtml} />
                                 </div>
                             </div>
 
-                            <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="mt-20 pt-12 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {modules.map(m => (
-                                    <div key={m.id} className="p-6 border-2 border-slate-50 bg-slate-50 rounded-2xl flex justify-between items-center group hover:bg-white hover:border-emerald-200 transition-all">
+                                    <div key={m.id} className="p-6 border border-slate-200 bg-slate-50 rounded flex justify-between items-center group hover:bg-white hover:shadow-lg transition-all">
                                         <div>
-                                            <span className="text-[10px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded mr-2 uppercase">Class {m.targetClass}</span>
-                                            <span className="font-bold text-slate-800">{m.name}</span>
+                                            <span className="text-[8px] font-black bg-slate-900 text-white px-2 py-0.5 rounded mr-3 uppercase tracking-tighter">Level {m.targetClass}</span>
+                                            <span className="font-semibold text-slate-800 text-xs">{m.name.split('.')[0]}</span>
                                         </div>
-                                        <button onClick={() => del('modules', m.id)} className="text-red-400 hover:text-red-600 font-bold text-xs uppercase opacity-0 group-hover:opacity-100">Delete</button>
+                                        <button onClick={() => del('modules', m.id)} className="text-red-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        </button>
                                     </div>
                                 ))}
                             </div>
