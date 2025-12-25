@@ -15,35 +15,39 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // 🛑 STEP 1: PASTE YOUR FIREBASE KEYS HERE 🛑
+        // 🛑 FIREBASE CONFIGURATION 🛑
         const firebaseConfig = {
-  apiKey: "AIzaSyALMgvcCfYCQVBZy3Kxv0r6vUx_gyoqYGg",
-  authDomain: "assessment-portal-27ad3.firebaseapp.com",
-  projectId: "assessment-portal-27ad3",
-  storageBucket: "assessment-portal-27ad3.firebasestorage.app",
-  messagingSenderId: "539434351950",
-  appId: "1:539434351950:web:c9a68dc8003d3f83d1f21f",
-  measurementId: "G-LBBRXQ1RJH"
-};
+            apiKey: "AIzaSyALMgvcCfYCQVBZy3Kxv0r6vUx_gyoqYGg",
+            authDomain: "assessment-portal-27ad3.firebaseapp.com",
+            projectId: "assessment-portal-27ad3",
+            storageBucket: "assessment-portal-27ad3.firebasestorage.app",
+            messagingSenderId: "539434351950",
+            appId: "1:539434351950:web:c9a68dc8003d3f83d1f21f",
+            measurementId: "G-LBBRXQ1RJH"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         
         // Make available to React
-        window.FB = { auth, db, collection, doc, setDoc, getDoc, onSnapshot, addDoc, deleteDoc, signInAnonymously, onAuthStateChanged };
+        window.FB = { auth, db, collection, doc, setDoc, getDoc, onSnapshot, addDoc, deleteDoc, updateDoc, signInAnonymously, onAuthStateChanged };
     </script>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
+
+        const ADMIN_PASS = "admin123";
 
         function App() {
             const [view, setView] = useState('login');
             const [admissionNo, setAdmissionNo] = useState('');
             const [questions, setQuestions] = useState([]);
             const [modules, setModules] = useState([]);
+            const [submissions, setSubmissions] = useState([]);
+            const [activeModule, setActiveModule] = useState(null);
             const [user, setUser] = useState(null);
 
             useEffect(() => {
@@ -54,47 +58,242 @@
                         setUser(u);
                         onSnapshot(collection(db, 'questions'), s => setQuestions(s.docs.map(d => ({id:d.id, ...d.data()}))));
                         onSnapshot(collection(db, 'modules'), s => setModules(s.docs.map(d => ({id:d.id, ...d.data()}))));
+                        onSnapshot(collection(db, 'submissions'), s => setSubmissions(s.docs.map(d => ({id:d.id, ...d.data()}))));
                     }
                 });
             }, []);
 
+            const exportCSV = () => {
+                if (submissions.length === 0) return;
+                const headers = ["Admission No", "Score", "Module", "Timestamp"];
+                const rows = submissions.map(s => [s.admissionNo, s.score, s.moduleName || 'Standard', new Date(s.completedAt).toLocaleString()]);
+                const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.setAttribute('href', url);
+                a.setAttribute('download', 'results.csv');
+                a.click();
+            };
+
             return (
-                <div className="max-w-2xl mx-auto p-6">
-                    <nav className="flex justify-between items-center mb-8">
-                        <h1 className="text-2xl font-bold text-indigo-600">EduPortal</h1>
-                        <button onClick={() => setView('admin')} className="text-slate-300 text-xs font-bold">ADMIN</button>
+                <div className="min-h-screen">
+                    <nav className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => {setView('login'); setActiveModule(null);}}>
+                            <div className="bg-indigo-600 p-2 rounded-lg text-white font-bold text-xs">EP</div>
+                            <span className="text-xl font-bold">EduPortal</span>
+                        </div>
+                        {view !== 'login' && (
+                            <button onClick={() => { setView('login'); setAdmissionNo(''); setActiveModule(null); }} className="text-sm font-semibold text-slate-400 hover:text-red-500">Exit</button>
+                        )}
                     </nav>
 
-                    {view === 'login' && (
-                        <div className="bg-white p-8 rounded-2xl shadow-xl border">
-                            <h2 className="text-xl font-bold mb-4 text-center">Student Access</h2>
-                            <input 
-                                className="w-full border p-3 rounded-xl mb-4 uppercase" 
-                                placeholder="STU-123" 
-                                onChange={e => setAdmissionNo(e.target.value)}
-                            />
-                            <button onClick={() => setView('dashboard')} className="w-full bg-indigo-600 text-white p-3 rounded-xl font-bold">Start Assessment</button>
+                    <main className="max-w-6xl mx-auto p-4 md:p-6">
+                        {view === 'login' && (
+                            <div className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl border mt-16">
+                                <h2 className="text-2xl font-bold mb-6 text-center text-slate-800">Student Login</h2>
+                                <input 
+                                    className="w-full border p-3 rounded-xl mb-4 uppercase font-medium focus:ring-2 focus:ring-indigo-500 outline-none" 
+                                    placeholder="STU-123" 
+                                    value={admissionNo}
+                                    onChange={e => setAdmissionNo(e.target.value)}
+                                />
+                                <button onClick={() => setView('dashboard')} className="w-full bg-indigo-600 text-white p-3 rounded-xl font-bold hover:bg-indigo-700 transition-all">Start Assessment</button>
+                                <button onClick={() => setView('admin-login')} className="mt-8 w-full text-xs text-slate-300 hover:text-slate-500">Teacher Login</button>
+                            </div>
+                        )}
+
+                        {view === 'admin-login' && (
+                            <div className="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl border mt-16">
+                                <h2 className="text-2xl font-bold mb-6 text-center">Admin Access</h2>
+                                <input 
+                                    type="password" placeholder="Password"
+                                    className="w-full px-4 py-3 rounded-xl border mb-4 text-center"
+                                    onKeyDown={(e) => e.key === 'Enter' && e.target.value === ADMIN_PASS && setView('admin-dashboard')}
+                                />
+                                <p className="text-[10px] text-center text-slate-400">Default: admin123</p>
+                            </div>
+                        )}
+
+                        {view === 'dashboard' && (
+                            <div className="max-w-4xl mx-auto">
+                                <h2 className="text-3xl font-bold mb-8">Welcome, {admissionNo}!</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 hover:border-indigo-500 transition-all cursor-pointer group" onClick={() => setView('quiz')}>
+                                        <h3 className="text-xl font-bold mb-2">Standard Quiz</h3>
+                                        <p className="text-slate-400 text-sm mb-4">Total questions: {questions.length}</p>
+                                        <span className="text-indigo-600 font-bold">Start Now →</span>
+                                    </div>
+                                    {modules.map(m => (
+                                        <div key={m.id} className="bg-white p-6 rounded-3xl border-2 border-slate-100 hover:border-emerald-500 transition-all cursor-pointer group" onClick={() => { setActiveModule(m); setView('external-view'); }}>
+                                            <h3 className="text-xl font-bold mb-2 text-emerald-600">{m.name}</h3>
+                                            <p className="text-slate-400 text-sm mb-4">External HTML Module</p>
+                                            <span className="text-emerald-600 font-bold">Launch Module →</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'quiz' && <QuizEngine questions={questions} admissionNo={admissionNo} onComplete={() => setView('thanks')} />}
+
+                        {view === 'external-view' && activeModule && (
+                            <div className="h-[80vh] w-full bg-white rounded-3xl shadow-2xl border overflow-hidden flex flex-col">
+                                <div className="bg-slate-900 text-white p-3 flex justify-between items-center px-6">
+                                    <span className="font-bold text-sm">Module: {activeModule.name}</span>
+                                    <button onClick={() => setView('dashboard')} className="text-xs bg-red-500 px-3 py-1 rounded-full">Close</button>
+                                </div>
+                                <iframe srcDoc={activeModule.html} className="flex-1 w-full border-none" sandbox="allow-scripts allow-forms allow-modals" />
+                            </div>
+                        )}
+
+                        {view === 'thanks' && (
+                            <div className="text-center py-20 bg-white rounded-3xl border shadow-sm">
+                                <h2 className="text-4xl font-bold text-slate-900 mb-4">Done!</h2>
+                                <p className="text-slate-500 mb-8">Your results have been saved.</p>
+                                <button onClick={() => setView('login')} className="bg-slate-900 text-white px-8 py-3 rounded-xl">Exit Portal</button>
+                            </div>
+                        )}
+
+                        {view === 'admin-dashboard' && <AdminPanel submissions={submissions} questions={questions} modules={modules} exportCSV={exportCSV} />}
+                    </main>
+                </div>
+            );
+        }
+
+        function QuizEngine({ questions, admissionNo, onComplete }) {
+            const [idx, setIdx] = useState(0);
+            const [ans, setAns] = useState({});
+            const start = useRef(Date.now());
+
+            if (questions.length === 0) return <div>No questions.</div>;
+            const q = questions[idx];
+
+            const finish = async () => {
+                const score = questions.filter((item, i) => (ans[i]||'').toLowerCase().trim() === (item.correct||'').toLowerCase().trim()).length;
+                const { db, collection, addDoc } = window.FB;
+                await addDoc(collection(db, 'submissions'), {
+                    admissionNo,
+                    score: `${score}/${questions.length}`,
+                    completedAt: Date.now(),
+                    timeSpent: Math.round((Date.now() - start.current)/1000)
+                });
+                onComplete();
+            };
+
+            return (
+                <div className="max-w-xl mx-auto bg-white p-10 rounded-3xl shadow-xl border">
+                    <p className="text-xs font-bold text-indigo-400 mb-2">Question {idx + 1} of {questions.length}</p>
+                    <h2 className="text-2xl font-bold mb-8">{q.text}</h2>
+                    <div className="space-y-3">
+                        {q.type === 'mcq' ? (q.options || []).map((o, i) => (
+                            <button key={i} onClick={() => setAns({...ans, [idx]: o})} className={`w-full p-4 text-left rounded-xl border-2 transition-all ${ans[idx] === o ? 'border-indigo-600 bg-indigo-50' : 'border-slate-100 hover:border-slate-200'}`}>{o}</button>
+                        )) : (
+                            <input className="w-full p-4 border-2 rounded-xl" value={ans[idx]||''} onChange={e => setAns({...ans, [idx]: e.target.value})} placeholder="Your answer..." />
+                        )}
+                    </div>
+                    <div className="flex justify-between mt-10">
+                        <button disabled={idx===0} onClick={() => setIdx(idx-1)} className="text-slate-400 font-bold disabled:opacity-0">Back</button>
+                        {idx === questions.length - 1 ? 
+                            <button onClick={finish} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold">Finish</button> :
+                            <button onClick={() => setIdx(idx+1)} className="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold">Next</button>
+                        }
+                    </div>
+                </div>
+            );
+        }
+
+        function AdminPanel({ submissions, questions, modules, exportCSV }) {
+            const [tab, setTab] = useState('results');
+            const [newQ, setNewQ] = useState({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '' });
+            const htmlRef = useRef();
+
+            const saveQ = async () => {
+                const { db, collection, addDoc } = window.FB;
+                await addDoc(collection(db, 'questions'), {...newQ, options: newQ.options.filter(o => o.trim())});
+                setNewQ({ text: '', type: 'mcq', options: ['', '', '', ''], correct: '' });
+            };
+
+            const uploadModule = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    const { db, collection, addDoc } = window.FB;
+                    await addDoc(collection(db, 'modules'), { name: file.name.replace('.html', ''), html: ev.target.result, addedAt: Date.now() });
+                    alert('Module Added');
+                };
+                reader.readAsText(file);
+            };
+
+            const delItem = async (col, id) => {
+                const { db, doc, deleteDoc } = window.FB;
+                if(confirm('Delete?')) await deleteDoc(doc(db, col, id));
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-2xl border flex justify-between items-center flex-wrap gap-4">
+                        <div className="flex bg-slate-100 p-1 rounded-xl">
+                            {['results', 'questions', 'modules'].map(t => (
+                                <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-lg text-sm font-bold capitalize ${tab === t ? 'bg-white shadow text-indigo-600' : 'text-slate-500'}`}>{t}</button>
+                            ))}
+                        </div>
+                        <button onClick={exportCSV} className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Download Results</button>
+                    </div>
+
+                    {tab === 'results' && (
+                        <div className="bg-white rounded-2xl border overflow-hidden">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 text-xs font-bold text-slate-400 border-b uppercase">
+                                    <tr><th className="p-4">Student</th><th className="p-4">Score</th><th className="p-4">Date</th></tr>
+                                </thead>
+                                <tbody className="divide-y text-sm">
+                                    {submissions.map((s, i) => (
+                                        <tr key={i}><td className="p-4 font-bold">{s.admissionNo}</td><td className="p-4">{s.score}</td><td className="p-4 text-slate-400">{new Date(s.completedAt).toLocaleDateString()}</td></tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     )}
 
-                    {view === 'dashboard' && (
-                        <div className="text-center">
-                            <h2 className="text-2xl font-bold">Welcome, {admissionNo}!</h2>
-                            <div className="grid gap-4 mt-6">
-                                <button className="bg-white p-6 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 font-bold">Standard Quiz ({questions.length})</button>
-                                {modules.map(m => (
-                                    <button key={m.id} className="bg-white p-6 rounded-2xl border-2 border-slate-100 hover:border-emerald-500 font-bold text-emerald-600">{m.name}</button>
+                    {tab === 'questions' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="lg:col-span-2 space-y-4">
+                                {questions.map(q => (
+                                    <div key={q.id} className="bg-white p-4 rounded-xl border flex justify-between">
+                                        <div><p className="font-bold">{q.text}</p><p className="text-xs text-green-600 font-bold">✓ {q.correct}</p></div>
+                                        <button onClick={() => delItem('questions', q.id)} className="text-red-400 text-xs">Delete</button>
+                                    </div>
                                 ))}
                             </div>
-                            <button onClick={() => setView('login')} className="mt-8 text-slate-400">Logout</button>
+                            <div className="bg-white p-6 rounded-2xl border h-fit sticky top-24">
+                                <h3 className="font-bold mb-4">Add Question</h3>
+                                <textarea className="w-full p-2 border rounded mb-2 text-sm" placeholder="Question" value={newQ.text} onChange={e => setNewQ({...newQ, text: e.target.value})} />
+                                <div className="flex gap-2 mb-2">
+                                    <button onClick={() => setNewQ({...newQ, type:'mcq'})} className={`flex-1 py-1 text-xs rounded border ${newQ.type==='mcq'?'bg-slate-800 text-white':''}`}>MCQ</button>
+                                    <button onClick={() => setNewQ({...newQ, type:'short'})} className={`flex-1 py-1 text-xs rounded border ${newQ.type==='short'?'bg-slate-800 text-white':''}`}>Short</button>
+                                </div>
+                                <input className="w-full p-2 border rounded mb-4 text-sm font-bold" placeholder="Correct Answer" value={newQ.correct} onChange={e => setNewQ({...newQ, correct: e.target.value})} />
+                                <button onClick={saveQ} className="w-full bg-indigo-600 text-white py-2 rounded font-bold">Save</button>
+                            </div>
                         </div>
                     )}
 
-                    {view === 'admin' && (
-                        <div className="bg-white p-6 rounded-2xl border shadow">
-                            <h2 className="font-bold text-lg mb-4">Admin Dashboard</h2>
-                            <p className="text-sm text-slate-500 mb-6 italic">Configuration loaded successfully.</p>
-                            <button onClick={() => setView('login')} className="bg-slate-100 px-4 py-2 rounded-lg font-bold">Back to Login</button>
+                    {tab === 'modules' && (
+                        <div className="bg-white p-6 rounded-2xl border">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-bold">HTML Modules</h3>
+                                <button onClick={() => htmlRef.current.click()} className="bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-sm">Upload HTML</button>
+                                <input type="file" ref={htmlRef} className="hidden" accept=".html" onChange={uploadModule} />
+                            </div>
+                            <div className="grid gap-2">
+                                {modules.map(m => (
+                                    <div key={m.id} className="p-3 border rounded-xl flex justify-between items-center">
+                                        <span className="font-bold text-slate-700">{m.name}</span>
+                                        <button onClick={() => delItem('modules', m.id)} className="text-red-400 text-xs font-bold">Remove</button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
